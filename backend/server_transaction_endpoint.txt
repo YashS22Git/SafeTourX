@@ -1,0 +1,36 @@
+// Add this endpoint after the /api/hotels/book endpoint
+
+// Confirm Transaction (After user signs in wallet)
+app.post('/api/hotels/confirm-transaction', async (req, res) => {
+    const { bookingId, signedTxn } = req.body;
+    
+    try {
+        // Decode signed transaction
+        const signedTxnDecoded = new Uint8Array(Buffer.from(signedTxn, 'base64'));
+        
+        // Submit to Algorand network
+        const txResponse = await algodClient.sendRawTransaction(signedTxnDecoded).do();
+        
+        // Wait for confirmation
+        const confirmedTxn = await algosdk.waitForConfirmation(algodClient, txResponse.txId, 4);
+        
+        // Update booking status
+        const booking = bookings.find(b => b.id === bookingId);
+        if (booking) {
+            booking.status = 'ESCROW_LOCKED';
+            booking.txId = txResponse.txId;
+            booking.confirmedRound = confirmedTxn['confirmed-round'];
+            delete booking.unsignedTxn;
+        }
+        
+        console.log(`✅ Transaction confirmed: ${txResponse.txId}`);
+        res.json({ 
+            success: true, 
+            txId: txResponse.txId,
+            booking 
+        });
+    } catch (error) {
+        console.error('Transaction confirmation error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
