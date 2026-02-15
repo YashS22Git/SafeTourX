@@ -17,7 +17,7 @@ function App() {
     const { currentUser, userProfile, logout } = useAuth();
     const [showSignup, setShowSignup] = useState(false);
     const [userAddress, setUserAddress] = useState(null);
-    const [riskHeatmap, setRiskHeatmap] = useState([]);
+
     const [activeTab, setActiveTab] = useState('map');
     const [identityData, setIdentityData] = useState(null);
     const [hotels, setHotels] = useState([]);
@@ -26,6 +26,8 @@ function App() {
     const [verificationStep, setVerificationStep] = useState(0);
     const [tempFile, setTempFile] = useState(null);
     const [selectedHotel, setSelectedHotel] = useState(null);
+    const [selectedCity, setSelectedCity] = useState('All');
+    const cities = ['All', 'Pune', 'Mumbai', 'Nagpur', 'Nashik', 'Aurangabad', 'Thane'];
 
     // Load wallet address from Firebase profile
     useEffect(() => {
@@ -35,13 +37,15 @@ function App() {
     }, [userProfile]);
 
     useEffect(() => {
-        fetchHeatmap();
-        fetchHotels();
-    }, []);
+        fetchHotels(selectedCity);
+    }, [selectedCity]);
 
-    const fetchHotels = async () => {
+    const fetchHotels = async (city = 'All') => {
         try {
-            const res = await axios.get('http://localhost:5000/api/hotels/list');
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const res = await axios.get(`${API_URL}/api/hotels/list`, {
+                params: { city }
+            });
             setHotels(res.data);
         } catch (err) {
             console.error("Failed to fetch hotels");
@@ -169,14 +173,7 @@ function App() {
         }
     };
 
-    const fetchHeatmap = async () => {
-        try {
-            const res = await axios.get('http://localhost:5000/api/risk/heatmap');
-            setRiskHeatmap(res.data);
-        } catch (err) {
-            console.error("Failed to fetch heatmap");
-        }
-    };
+
 
     const handleIdentityUpload = (file) => {
         if (!file) return;
@@ -360,7 +357,6 @@ function App() {
                                 <div className="lg:col-span-9 space-y-6">
                                     <div className="bg-white p-2 rounded-[24px] shadow-premium border border-slate-100">
                                         <MapView
-                                            riskHeatmap={riskHeatmap}
                                             hotels={hotels}
                                             onBook={setSelectedHotel}
                                         />
@@ -429,9 +425,25 @@ function App() {
                             exit={{ opacity: 0, x: -20 }}
                             className="space-y-8"
                         >
-                            <header>
-                                <h2 className="text-3xl font-extrabold tracking-tight italic">Smart <span className="text-brand-600">Escrow</span> Management</h2>
-                                <p className="text-slate-500 text-sm mt-1 max-w-xl font-medium">Your funds are protected by the Algorand blockchain. Automated release only upon verified check-in.</p>
+                            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                                <div>
+                                    <h2 className="text-3xl font-extrabold tracking-tight italic">Verified <span className="text-brand-600">Housing</span></h2>
+                                    <p className="text-slate-500 text-sm mt-1 max-w-xl font-medium">Smart Contracts hold your security deposit until you verify the property condition.</p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {cities.map(city => (
+                                        <button
+                                            key={city}
+                                            onClick={() => setSelectedCity(city)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${selectedCity === city
+                                                ? 'bg-brand-600 text-white border-brand-600 shadow-md'
+                                                : 'bg-white text-slate-500 border-slate-200 hover:border-brand-300 hover:text-brand-600'
+                                                }`}
+                                        >
+                                            {city}
+                                        </button>
+                                    ))}
+                                </div>
                             </header>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

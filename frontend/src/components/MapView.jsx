@@ -91,14 +91,31 @@ const redMarker = new L.Icon({
 });
 
 // ── Main Component ──
-const MapView = ({ riskHeatmap, hotels, onBook }) => {
+const MapView = ({ hotels, onBook }) => {
     const [map, setMap] = useState(null);
     const [startPoint, setStartPoint] = useState(null);
     const [endPoint, setEndPoint] = useState(null);
     const [routes, setRoutes] = useState([]);
     const [selectedIdx, setSelectedIdx] = useState(0);
     const [analyzing, setAnalyzing] = useState(false);
-    const [showHeatmap, setShowHeatmap] = useState(true);
+    const [showCrimeDots, setShowCrimeDots] = useState(true);
+    const [crimeData, setCrimeData] = useState([]);
+
+    // Fetch Crime Data on Mount
+    useEffect(() => {
+        const fetchCrimeData = async () => {
+            try {
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                const res = await axios.get(`${API_URL}/api/crime/data`);
+                if (Array.isArray(res.data)) {
+                    setCrimeData(res.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch crime data", err);
+            }
+        };
+        fetchCrimeData();
+    }, []);
 
     // ── Map Click Logic ──
     const ClickHandler = () => {
@@ -142,18 +159,31 @@ const MapView = ({ riskHeatmap, hotels, onBook }) => {
                 // Calculate risk from demo data proximity
                 let totalRisk = 0;
                 const sampledPath = path.filter((_, idx) => idx % 15 === 0);
-                for (const pt of sampledPath) {
-                    for (const crime of DEMO_CRIME_DATA) {
-                        const d = L.latLng(pt).distanceTo([crime.lat, crime.lng]);
-                        if (d < 500) totalRisk += crime.risk * (1 - d / 500);
+
+                // Simple local proximity check against loaded crime data
+                if (crimeData.length > 0) {
+                    for (const pt of sampledPath) {
+                        // Check random sample of crime data to avoid O(N^2) lag
+                        for (let k = 0; k < Math.min(crimeData.length, 100); k++) {
+                            const crime = crimeData[k];
+                            // Robust fallbacks for field names
+                            const cLat = crime.latitude || crime.lat;
+                            const cLng = crime.longitude || crime.lng;
+                            const cRisk = crime.risk_label === 'High' ? 3 : crime.risk_label === 'Medium' ? 2 : 1;
+
+                            const d = L.latLng(pt).distanceTo([cLat, cLng]);
+                            if (d < 300) totalRisk += cRisk * (1 - d / 300);
+                        }
                     }
                 }
-                const riskScore = Math.min(100, (totalRisk / Math.max(1, sampledPath.length)) * 12).toFixed(1);
+
+                const riskScore = Math.min(100, (totalRisk / Math.max(1, sampledPath.length)) * 5).toFixed(1);
 
                 // Also try server-side AI
                 let aiRisk = null;
                 try {
-                    const aiRes = await axios.post('http://localhost:5000/api/risk/batch', {
+                    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                    const aiRes = await axios.post(`${API_URL}/api/risk/batch`, {
                         points: sampledPath.slice(0, 50).map(p => ({ lat: p[0], lng: p[1] }))
                     });
                     aiRisk = aiRes.data.average_risk;
@@ -190,29 +220,34 @@ const MapView = ({ riskHeatmap, hotels, onBook }) => {
     return (
         <div className="w-full h-[600px] rounded-2xl overflow-hidden border border-slate-200 shadow-inner relative z-0">
             {/* ── Map ── */}
-            <MapContainer center={[18.9600, 72.8350]} zoom={12} style={{ height: '100%', width: '100%' }} zoomControl={false} ref={setMap}>
+            <MapContainer center={[19.0760, 72.8777]} zoom={11} style={{ height: '100%', width: '100%' }} zoomControl={false} ref={setMap}>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
                 <ClickHandler />
 
-                {/* Heatmap Circles */}
-                {showHeatmap && RISK_ZONES.map((z, i) => (
-                    <Circle key={`zone-${i}`} center={[z.lat, z.lng]} radius={z.radius}
-                        pathOptions={{ color: RISK_COLORS[z.risk], fillColor: RISK_COLORS[z.risk], fillOpacity: 0.15, weight: 1.5, opacity: 0.5 }}
-                    />
-                ))}
+                {/* Crime Dots (Real Data) */}
+                {showCrimeDots && crimeData.map((c, i) => {
+                    // Robust field handling
+                    const lat = c.latitude || c.lat;
+                    const lng = c.longitude || c.lng;
+                    const type = c.crime_type || c.type || "Unknown";
+                    const risk = c.risk_label || "Medium";
 
-                {/* Crime Dots */}
-                {showHeatmap && DEMO_CRIME_DATA.map((c, i) => (
-                    <Circle key={`crime-${i}`} center={[c.lat, c.lng]} radius={80}
-                        pathOptions={{
-                            color: c.risk === 3 ? '#ef4444' : c.risk === 2 ? '#f59e0b' : '#22c55e',
-                            fillColor: c.risk === 3 ? '#ef4444' : c.risk === 2 ? '#f59e0b' : '#22c55e',
-                            fillOpacity: 0.6, weight: 0
-                        }}
-                    >
-                        <Popup><span style={{ fontSize: 12 }}><b>{c.type}</b> — Risk: {['Safe', 'Low', 'Med', 'High'][c.risk]}</span></Popup>
-                    </Circle>
-                ))}
+                    if (!lat || !lng) return null;
+
+                    const color = risk === 'High' ? '#ef4444' : risk === 'Medium' ? '#f59e0b' : '#3b82f6';
+
+                    return (
+                        <Circle key={`crime-${i}`} center={[lat, lng]} radius={60}
+                            pathOptions={{
+                                color: color,
+                                fillColor: color,
+                                fillOpacity: 0.7, weight: 0
+                            }}
+                        >
+                            <Popup><span style={{ fontSize: 12 }}><b>{type}</b><br />Risk: {risk}</span></Popup>
+                        </Circle>
+                    );
+                })}
 
                 {/* Start / End */}
                 {startPoint && <Marker position={startPoint} icon={greenMarker}><Popup>Start</Popup></Marker>}
@@ -228,9 +263,19 @@ const MapView = ({ riskHeatmap, hotels, onBook }) => {
 
                 {/* Hotels */}
                 {hotels?.map(h => {
-                    let pos = [18.9217, 72.8332];
-                    if (h.id === 'hotel_002') pos = [18.9272, 72.8205];
-                    if (h.id === 'hotel_003') pos = [19.0020, 72.8420];
+                    // Try to parse location if lat/lng not explicit (Mock logic)
+                    // For now, mapping fixed positions to new cities for demo only
+                    let pos = [19.0760, 72.8777]; // Default Mumbai center
+                    if (h.city === 'Pune') pos = [18.5204, 73.8567];
+                    if (h.city === 'Nagpur') pos = [21.1458, 79.0882];
+                    if (h.city === 'Nashik') pos = [19.9975, 73.7898];
+                    if (h.city === 'Aurangabad') pos = [19.8762, 75.3433];
+                    if (h.city === 'Thane') pos = [19.2183, 72.9781];
+
+                    // Add slight random jitter so they don't overlap perfectly
+                    const jitter = (h.id.charCodeAt(h.id.length - 1) % 10) * 0.005;
+                    pos = [pos[0] + jitter, pos[1] + jitter];
+
                     return (
                         <Marker key={h.id} position={pos}>
                             <Popup>
@@ -270,9 +315,9 @@ const MapView = ({ riskHeatmap, hotels, onBook }) => {
                 </button>
 
                 {/* Heatmap Toggle */}
-                <button onClick={() => setShowHeatmap(!showHeatmap)}
-                    className={`px-3 py-2 rounded-lg text-xs font-bold border shadow transition-all ${showHeatmap ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white/90 text-slate-400 border-slate-200'}`}>
-                    {showHeatmap ? '🔴 Heatmap ON' : '○ Heatmap OFF'}
+                <button onClick={() => setShowCrimeDots(!showCrimeDots)}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold border shadow transition-all ${showCrimeDots ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white/90 text-slate-400 border-slate-200'}`}>
+                    {showCrimeDots ? '🔴 Crime Dots ON' : '○ Crime Dots OFF'}
                 </button>
             </div>
 
@@ -328,13 +373,13 @@ const MapView = ({ riskHeatmap, hotels, onBook }) => {
             )}
 
             {/* ── Legend (Bottom Right when no routes) ── */}
-            {showHeatmap && routes.length === 0 && (
+            {showCrimeDots && routes.length === 0 && (
                 <div className="absolute bottom-3 right-3 z-[1000] bg-white/90 backdrop-blur rounded-lg shadow-lg border border-slate-200 p-2 text-[10px]">
                     <div className="font-bold text-slate-600 mb-1">Crime Risk</div>
                     <div className="flex flex-col gap-0.5">
-                        <span><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1" /> High</span>
-                        <span><span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1" /> Medium</span>
-                        <span><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1" /> Low</span>
+                        <span><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1" /> High Risk</span>
+                        <span><span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1" /> Medium Risk</span>
+                        <span><span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1" /> Low Risk</span>
                     </div>
                 </div>
             )}
