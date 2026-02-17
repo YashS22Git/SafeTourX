@@ -1,0 +1,25 @@
+[2026-02-14T14:44:46.909Z] Fetching transaction params...
+[2026-02-14T14:44:47.638Z] Params received: {"flatFee":false,"fee":"0","firstValid":"60525651","lastValid":"60526651","genesisID":"testnet-v1.0","genesisHash":{"0":72,"1":99,"2":181,"3":24,"4":164,"5":179,"6":200,"7":78,"8":200,"9":16,"10":242,"11":45,"12":79,"13":16,"14":129,"15":203,"16":15,"17":113,"18":240,"19":89,"20":167,"21":172,"22":32,"23":222,"24":198,"25":47,"26":127,"27":112,"28":229,"29":9,"30":58,"31":34},"minFee":"1000","consensusVersion":"https://github.com/algorandfoundation/specs/tree/953304de35264fc3ef91bcd05c123242015eeaed"}
+[2026-02-14T14:44:47.639Z] Creating transaction object from BRZAIDE7N3PSAJMRDV7PYV5UBKMUR4QUPRL6LA3KCVU7ZOADP7CRYK44CA to U3CXLXWDCXL2CGEJVTRDOIWWLJ4IUW5OMNGEYLHHIFKLVWJWM7BWFAHN4Q
+[2026-02-14T14:44:47.641Z] Booking error: Address must not be null or undefined
+[2026-02-14T14:44:47.641Z] Error: Address must not be null or undefined
+    at ensureAddress (D:\Documents\HACKATHONS\TouristSafety\backend\node_modules\algosdk\dist\cjs\transaction.js:67:15)
+    at new Transaction (D:\Documents\HACKATHONS\TouristSafety\backend\node_modules\algosdk\dist\cjs\transaction.js:209:23)
+    at Object.makePaymentTxnWithSuggestedParamsFromObject (D:\Documents\HACKATHONS\TouristSafety\backend\node_modules\algosdk\dist\cjs\makeTxn.js:13:12)
+    at D:\Documents\HACKATHONS\TouristSafety\backend\server.js:234:29
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2026-02-14T14:46:06.739Z] Fetching transaction params...
+[2026-02-14T14:46:07.058Z] Params received: {"flatFee":false,"fee":"0","firstValid":"60525680","lastValid":"60526680","genesisID":"testnet-v1.0","genesisHash":{"0":72,"1":99,"2":181,"3":24,"4":164,"5":179,"6":200,"7":78,"8":200,"9":16,"10":242,"11":45,"12":79,"13":16,"14":129,"15":203,"16":15,"17":113,"18":240,"19":89,"20":167,"21":172,"22":32,"23":222,"24":198,"25":47,"26":127,"27":112,"28":229,"29":9,"30":58,"31":34},"minFee":"1000","consensusVersion":"https://github.com/algorandfoundation/specs/tree/953304de35264fc3ef91bcd05c123242015eeaed"}
+[2026-02-14T14:46:07.059Z] Creating transaction object from U3CXLXWDCXL2CGEJVTRDOIWWLJ4IUW5OMNGEYLHHIFKLVWJWM7BWFAHN4Q to U3CXLXWDCXL2CGEJVTRDOIWWLJ4IUW5OMNGEYLHHIFKLVWJWM7BWFAHN4Q
+[2026-02-14T14:46:07.059Z] Booking error: Address must not be null or undefined
+[2026-02-14T14:46:07.059Z] Error: Address must not be null or undefined
+    at ensureAddress (D:\Documents\HACKATHONS\TouristSafety\backend\node_modules\algosdk\dist\cjs\transaction.js:67:15)
+    at new Transaction (D:\Documents\HACKATHONS\TouristSafety\backend\node_modules\algosdk\dist\cjs\transaction.js:209:23)
+    at Object.makePaymentTxnWithSuggestedParamsFromObject (D:\Documents\HACKATHONS\TouristSafety\backend\node_modules\algosdk\dist\cjs\makeTxn.js:13:12)
+    at D:\Documents\HACKATHONS\TouristSafety\backend\server.js:234:29
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2026-02-14T15:23:23.187Z] Booking request: hotel=hotel_001, user=BRZAIDE7N3PSAJMRDV7PYV5UBKMUR4QUPRL6LA3KCVU7ZOADP7CRYK44CA, price=0.1 ALGO, txId=WOVOWVEOBPOLXHFHZI4VIWRPO7ZD3OGE5QK3GTPMMWOFNN3CNDIQ
+[2026-02-14T15:23:23.188Z] ✅ Booking recorded: STX-9275-3188
+[2026-02-14T19:34:35.101Z] Booking request: hotel=hotel_001, user=BRZAIDE7N3PSAJMRDV7PYV5UBKMUR4QUPRL6LA3KCVU7ZOADP7CRYK44CA, price=0.1 ALGO, txId=WDUHNYRCVWGBZTIOINWXGNJF646ROIYHCCRZUHHMR7PKY3A26CLA
+[2026-02-14T19:34:35.103Z] Details: chinmayT, 1 guests, 2026-05-01 to 2026-05-02
+[2026-02-14T19:34:35.104Z] ✅ Booking recorded: STX-2323-5104
